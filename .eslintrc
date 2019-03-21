@@ -1,12 +1,23 @@
 {
   "extends": "airbnb",
+  "parser": "babel-eslint",
   "rules": {
     "arrow-body-style": 0,
     "prefer-arrow-callback": 0,
     "func-names": 0,
     "react/jsx-no-bind": 0,
     "react/jsx-uses-react": 1,
-    "react/prefer-stateless-function": 0
+    "react/prefer-stateless-function": 0,
+    "max-len": [
+      2,
+      80,
+      2,
+      {
+        "ignoreUrls": true,
+        "ignoreComments": true
+      }
+    ],
+    "no-unused-expressions": ["error", { "allowShortCircuit": true }]
   },
   "parserOptions": {
     "ecmaVersion": 6,

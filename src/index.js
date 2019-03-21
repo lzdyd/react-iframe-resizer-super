@@ -10,23 +10,76 @@ import ReactDOM from 'react-dom';
 import { iframeResizer as iframeResizerLib } from 'iframe-resizer';
 
 class IframeResizer extends React.Component {
+  static propTypes = {
+    // iframe content/document
+    // option 1. content of HTML to load in the iframe
+    content: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+    // option 2. src to a URL to load in the iframe
+    src: PropTypes.string,
+    // iframe-resizer controls and helpers
+    iframeResizerEnable: PropTypes.bool,
+    iframeResizerOptions: PropTypes.object,
+    iframeResizerUrl: PropTypes.oneOfType([
+      PropTypes.string, // URL to inject
+      PropTypes.bool, // false = disable inject
+    ]),
+    // misc props to pass through to iframe
+    id: PropTypes.string,
+    frameBorder: PropTypes.number,
+    className: PropTypes.string,
+    style: PropTypes.object,
+    // optional extra callback when iframe is loaded
+    // onIframeLoaded: PropTypes.func,
+  };
+
+  static defaultProps = {
+    // resize iframe
+    iframeResizerEnable: true,
+    iframeResizerOptions: {
+      // log: true,
+      // autoResize: true,
+      // checkOrigin: false,
+      // resizeFrom: 'parent',
+      // heightCalculationMethod: 'max',
+      // initCallback: () => { console.log('ready!'); },
+      // resizedCallback: () => { console.log('resized!'); },
+    },
+    iframeResizerUrl:
+      'https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/3.5.8/iframeResizer.contentWindow.min.js',
+    // misc props to pass through to iframe
+    frameBorder: 0,
+    style: {
+      width: '100%',
+      minHeight: 20,
+    },
+  };
+
   componentDidMount() {
     // can't update until we have a mounted iframe
     this.updateIframe(this.props);
     this.resizeIframe(this.props);
   }
-  componentWillUnmount() {
-    // React will remove the iframe, however we need to manually
-    // call iframe-resizer to stop its listeners
-    const iframeResizer = this.refs.frame.iFrameResizer
-    iframeResizer && iframeResizer.removeListeners();
-  }
+
   componentWillReceiveProps(nextProps) {
     // can replace content if we got new props
     this.updateIframe(nextProps);
     this.resizeIframe(nextProps);
   }
-  updateIframe = (props) => {
+
+  componentWillUnmount() {
+    // React will remove the iframe, however we need to manually
+    // call iframe-resizer to stop its listeners
+    const iframeResizer = this.refs.frame.iFrameResizer;
+    iframeResizer && iframeResizer.removeListeners();
+  }
+
+  onLoad = () => {
+    this.injectIframeResizerUrl();
+    // DISABLED because it's causing a loading loop :(
+    // if (this.props.onIframeLoaded) this.props.onIframeLoaded();
+  };
+
+  updateIframe = props => {
     // has src - no injected content
     if (props.src) return;
     // do we have content to inject (content or children)
@@ -56,9 +109,10 @@ class IframeResizer extends React.Component {
       doc.open();
       doc.write('<div id="iframe-root"></div>');
       doc.close();
-      ReactDOM.render(content, doc.getElementById('iframe-root'))
+      ReactDOM.render(content, doc.getElementById('iframe-root'));
     }
-  }
+  };
+
   // inject the iframe resizer "content window" script
   injectIframeResizerUrl = () => {
     if (!this.props.iframeResizerUrl) return;
@@ -88,19 +142,16 @@ class IframeResizer extends React.Component {
     resizerScriptElement.type = 'text/javascript';
     resizerScriptElement.src = this.props.iframeResizerUrl;
     injectTarget.appendChild(resizerScriptElement);
-  }
-  onLoad = () => {
-    this.injectIframeResizerUrl();
-    // DISABLED because it's causing a loading loop :(
-    // if (this.props.onIframeLoaded) this.props.onIframeLoaded();
-  }
-  resizeIframe = (props) => {
+  };
+
+  resizeIframe = props => {
     const frame = this.refs.frame;
     if (!frame) return;
     if (props.iframeResizerEnable) {
       iframeResizerLib(props.iframeResizerOptions, frame);
     }
-  }
+  };
+
   render() {
     const { src, id, frameBorder, className, style } = this.props;
     return (
@@ -116,49 +167,5 @@ class IframeResizer extends React.Component {
     );
   }
 }
-IframeResizer.propTypes = {
-  // iframe content/document
-  // option 1. content of HTML to load in the iframe
-  content: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.element,
-  ]),
-  // option 2. src to a URL to load in the iframe
-  src: PropTypes.string,
-  // iframe-resizer controls and helpers
-  iframeResizerEnable: PropTypes.bool,
-  iframeResizerOptions: PropTypes.object,
-  iframeResizerUrl: PropTypes.oneOfType([
-    PropTypes.string, // URL to inject
-    PropTypes.bool, // false = disable inject
-  ]),
-  // misc props to pass through to iframe
-  id: PropTypes.string,
-  frameBorder: PropTypes.number,
-  className: PropTypes.string,
-  style: PropTypes.object,
-  // optional extra callback when iframe is loaded
-  // onIframeLoaded: PropTypes.func,
-};
-IframeResizer.defaultProps = {
-  // resize iframe
-  iframeResizerEnable: true,
-  iframeResizerOptions: {
-    // log: true,
-    // autoResize: true,
-    // checkOrigin: false,
-    // resizeFrom: 'parent',
-    // heightCalculationMethod: 'max',
-    // initCallback: () => { console.log('ready!'); },
-    // resizedCallback: () => { console.log('resized!'); },
-  },
-  iframeResizerUrl: 'https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/3.5.8/iframeResizer.contentWindow.min.js',
-  // misc props to pass through to iframe
-  frameBorder: 0,
-  style: {
-    width: '100%',
-    minHeight: 20,
-  },
-};
 
 export default IframeResizer;
